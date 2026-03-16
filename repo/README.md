@@ -1,150 +1,53 @@
-# Object Detection: Faster R-CNN vs YOLOv8n
+Wells Hull
+	HW2
 
-**Assignment 2 — Object Detection and Recognition**  
-Comparison of two detection architectures across two datasets under an 8 GB GPU constraint.
+We are given two datasets for this assignment and two models as well. The Penn-Fudan dataset is a single class detection benchmark containing 170 images of pedestrians photographed in urban environments across Penn and Fudan University campuses. This dataset presents some challenges such as partial occlusion and variable pedestrian scale. All images were resized to 512x512 pixels. The full Oxford-IIIT Pet dataset contains 37 cat and dog breeds across 7,349 images. A 10-breed subset was made containing Abyssinian, Bengal, Birman, Bombay, British Shorthair, Egyptian Mau, Maine Coon, Persian, Ragdoll, and Siamese. All these are capped at 50 images per breed for a total of around 500 images. Images were resized to 512x512 and split 70/15/15. 
 
----
+Faster R-CNN 
+Faster R-CNN is a two-stage detector. A Region Proposal Network (RPN) first generates candidate object regions, which are then classified into and refined in a second stage. The original VGG16 backbone is replace here with MobilityNetV3-Large combined with a Feature Pyramid Network (FPN), reducing memory consumption while retaining multi-scale feature extraction. 
 
-## Results Summary
+Yolov8n (Nano)
+YOLOv8 is a single-stage detector from Ultralytics that predicts bounding boxes and class probabilities. It has about 3.2 M parameters making it very fast and great for low memory GPUS. It simplifies the training objective and removes the need to tune anchor hyperparameters.
 
-| Dataset | Model | mAP@0.5 | Precision | Recall | FPS |
-|---|---|---|---|---|---|
-| Penn-Fudan | Faster R-CNN | **90.0%** | 84.4% | **96.4%** | 29.3 |
-| Penn-Fudan | YOLOv8n | 79.3% | **94.2%** | 72.1% | 97.8 |
-| Oxford Pet | Faster R-CNN | 46.0% | 62.1% | 36.5% | 35.9 |
-| Oxford Pet | YOLOv8n | **63.8%** | 63.2% | 60.6% | **100.3** |
+Results
+I wont be able to include all the pictures of the data because it would clutter the report so I will just talk about the findings. 
 
-**Key finding:** Model choice is task-dependent. Faster R-CNN wins on single-class pedestrian detection (high recall). YOLOv8n wins on multi-class fine-grained breed detection and is ~3.4× faster across both tasks.
+YOLOv8n on Penn-Fudan — Precision-Recall & Confusion Matrix
+The PR curve shows AP=0.882 with precision staying near 1.0 until recall reaches about 0.4 then declining. This shows the model lights up confidently on pedestrians it detects, but misses a large proportion. 48 out of 70 to be exact. This makes it a 69% miss rate per the normalised confusion matrix. This high precision- low recall pattern is the opposite of Faster R-CNN, which hit a 96.4% recall with 10 false positives. 
 
----
+YOLOv8n on Oxford Pet — F1 Confidence Curve
+The F1 confidence shows that the optimal operating threshold for YOLOv8n on the pet dataset is 0.139, having a mean F1 of 0.46. The low optimal confidence threshold reflects the models uncertainty on difficult breeds. Well performing breeds like the Siamese, Bombay, and British Shorthair all had a high F1 at much higher thresholds. 
 
-## Repository Structure
 
-```
-├── notebooks/
-│   ├── notebook1_fasterrcnn_pennfudan.py     # Faster R-CNN on Penn-Fudan
-│   ├── notebook2_yolo_oxfordpet.py           # YOLOv8n on Oxford Pet
-│   ├── notebook3_yolo_pennfudan.py           # YOLOv8n on Penn-Fudan
-│   └── notebook4_fasterrcnn_oxfordpet.py     # Faster R-CNN on Oxford Pet
-├── src/
-│   ├── dataset.py       # Penn-Fudan dataset loader (PyTorch Dataset class)
-│   ├── train.py         # Faster R-CNN training script (CLI)
-│   ├── evaluate.py      # Evaluation: mAP, precision, recall, FPS
-│   ├── pet_yolo.py      # Oxford Pet subset prep + YOLOv8n training
-│   └── compare.py       # Generate comparison table from eval_results.json
-├── results/
-│   └── results_summary.json    # All four experiment metrics
-└── README.md
-```
 
----
 
-## Datasets
+Faster R-CNN on Penn-Fudan
 
-### Penn-Fudan Pedestrian Dataset
-- ~170 images, 1 class (person), instance segmentation masks
-- Masks converted to bounding boxes programmatically
-- Split: 119 train / 26 val / 25 test
+The model was trained for 10 epochs. Training loss decreased sharply from 0.461 to 0.170. This shows rapid adaptation of the classification to the pedestrian detection task. Training and validation loss curves for Faster R-CNN on Penn Fudan over 10 epochs. Validation loss drifts upward from epoch 2 onward, showing that the model peaked early on this dataset. 
 
-```bash
-wget https://www.cis.upenn.edu/~jshi/ped_html/PennFudanPed.zip
-unzip PennFudanPed.zip
-```
 
-### Oxford-IIIT Pet Dataset (10-breed subset)
-- 10 breeds: Abyssinian, Bengal, Birman, Bombay, British Shorthair,
-  Egyptian Mau, Maine Coon, Persian, Ragdoll, Siamese
-- ~50 images per breed (~500 total), Pascal VOC XML annotations
-- Split: ~350 train / ~75 val / ~75 test
+YOLOv8n on Penn-Fudan — Training Curves
 
-```bash
-wget https://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz
-wget https://www.robots.ox.ac.uk/~vgg/data/pets/data/annotations.tar.gz
-tar -xf images.tar.gz && tar -xf annotations.tar.gz
-```
+YOLOv8n was trained on Penn-Fudan for up to 15 epochs with patience=5 early stopping. The model triggered early stopping at epoch 7. Training losses decrease steadily. Val metrics are noisy due to the tiny validation set of about 26 images. 
 
----
+ Faster R-CNN on Oxford Pet — Training Curves
 
-## Running on Google Colab
+Faster R-CNN was trained for 12 epochs on 10 breed Oxford Pet subset. Training loss declined steadily from 1.254 to 0.240, which shows ongoing learning throughout. Validation loss was noisiest in the first 4 epochs, then stabilised at approximately 0.91 from epoch 6 onward before slowly moving to 0.966 by epoch 11. This indicated overfitting. 
 
-Each notebook in `notebooks/` is structured as a plain Python file with clearly marked cell boundaries (`# ─── CELL N ───`). To run:
 
-1. Open [Google Colab](https://colab.research.google.com)
-2. Set runtime to **GPU** (Runtime → Change runtime type → T4 GPU)
-3. Create a new notebook
-4. Copy each `# ─── CELL N ───` block into a separate cell
-5. Run cells top to bottom
+Comparison Table
 
-### Notebook order
-| Notebook | Dataset | Model | Epochs | mAP@0.5 |
-|---|---|---|---|---|
-| notebook1 | Penn-Fudan | Faster R-CNN | 10 | 90.0% |
-| notebook2 | Oxford Pet | YOLOv8n | 18 | 63.8% |
-| notebook3 | Penn-Fudan | YOLOv8n | 7 | 79.3% |
-| notebook4 | Oxford Pet | Faster R-CNN | 12 | 46.0% |
 
----
+Findings
 
-## Running Locally (src/)
+Penn-Fudan: Faster R-CNN wins clearly with 90% vs 79.3%. Its two-stage RPN recovers nearly every pedestrian with a 96.4% accuracy, missing only 2 of 56. YOLOv8n is still very precise with 94.2%, but missing 6% of pedestrians. Its conservative single-stage head under fires on small targets. 
 
-### Train Faster R-CNN on Penn-Fudan
-```bash
-pip install torch torchvision
+Oxford Pet: YOLOv8n wins 63.98% vs 46%. With only about 35 images per breed, YOLOv8n’s decoupled classification head generalizes better than Faster R-CNN’s two stage pipeline, which overfits badly.
 
-python src/train.py \
-  --data_path ./PennFudanPed \
-  --epochs 12 \
-  --batch_size 2
-```
+Speed: YOLOv8n is about 3.4x faster across both datasets.
 
-### Evaluate
-```bash
-python src/evaluate.py \
-  --data_path ./PennFudanPed \
-  --weights ./checkpoints/best_model.pth
-```
+Convergence: Both models converge within 2-7 epochs on the Penn-Fudan set. On the Oxford Pet task, YOLOv8n showed no change at epoch 18, which could mean more training or data per class would improve results. 
 
-### Compare results
-```bash
-# After running both models, place their eval_results.json files in results/
-python src/compare.py \
-  --frcnn results/frcnn_eval.json \
-  --yolo  results/yolo_eval.json
-```
+Precision vs Recall trade-off: On Penn-Fudan, Faster R-CNN prioritizes recall while YOLOv8n prioritizes precision. For safety critical pedestrian detection, Faster R-CNN high recall behavior is better. 
 
----
 
-## Requirements
-
-```
-torch>=2.0
-torchvision>=0.15
-ultralytics>=8.0
-Pillow
-numpy
-matplotlib
-```
-
-Install:
-```bash
-pip install torch torchvision ultralytics Pillow numpy matplotlib
-```
-
----
-
-## GPU Memory Notes (8 GB constraint)
-
-| Setting | Faster R-CNN | YOLOv8n |
-|---|---|---|
-| Batch size | 2 | 8 |
-| Image size | 512×512 | 512×512 |
-| Mixed precision | Yes (GradScaler) | Yes (built-in AMP) |
-| Backbone | MobileNetV3-Large | CSPDarknet nano |
-
----
-
-## Architecture Notes
-
-**Faster R-CNN** uses a two-stage pipeline: a Region Proposal Network (RPN) first generates candidate regions, which are then classified and refined. This produces high recall (finds most objects) but slower inference (~30 FPS).
-
-**YOLOv8n** predicts all boxes and classes in a single forward pass using a decoupled head. ~3.4× faster than Faster R-CNN, better at multi-class tasks with limited data per class.
