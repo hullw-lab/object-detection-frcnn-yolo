@@ -1,0 +1,52 @@
+{
+  "experiments": [
+    {
+      "dataset": "Penn-Fudan Pedestrian",
+      "model": "Faster R-CNN (MobileNetV3-Large + FPN)",
+      "notebook": "notebooks/notebook1_fasterrcnn_pennfudan.py",
+      "epochs": 10,
+      "mAP_50": 0.900,
+      "precision": 0.844,
+      "recall": 0.964,
+      "f1": 0.900,
+      "fps": 29.3,
+      "training_time_min": 1.5
+    },
+    {
+      "dataset": "Penn-Fudan Pedestrian",
+      "model": "YOLOv8n",
+      "notebook": "notebooks/notebook3_yolo_pennfudan.py",
+      "epochs": 7,
+      "mAP_50": 0.7929,
+      "mAP_50_95": 0.5915,
+      "precision": 0.9415,
+      "recall": 0.721,
+      "fps": 97.79,
+      "training_time_min": 2.0
+    },
+    {
+      "dataset": "Oxford-IIIT Pet (10-breed subset)",
+      "model": "Faster R-CNN (MobileNetV3-Large + FPN)",
+      "notebook": "notebooks/notebook4_fasterrcnn_oxfordpet.py",
+      "epochs": 12,
+      "mAP_50": 0.4597,
+      "precision": 0.6208,
+      "recall": 0.365,
+      "f1": 0.4597,
+      "fps": 35.89,
+      "training_time_min": 1.8
+    },
+    {
+      "dataset": "Oxford-IIIT Pet (10-breed subset)",
+      "model": "YOLOv8n",
+      "notebook": "notebooks/notebook2_yolo_oxfordpet.py",
+      "epochs": 18,
+      "mAP_50": 0.6378,
+      "mAP_50_95": 0.5363,
+      "precision": 0.6321,
+      "recall": 0.6057,
+      "fps": 100.28,
+      "training_time_min": 6.0
+    }
+  ]
+}
