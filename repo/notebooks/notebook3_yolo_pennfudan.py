@@ -1,15 +1,8 @@
-# =============================================================================
+
 # NOTEBOOK 3 — YOLOv8n on Penn-Fudan Pedestrian Dataset
-# Copy each section into a separate Colab cell and run top to bottom.
-# Runtime: GPU (Runtime > Change runtime type > T4 GPU)
-# =============================================================================
+# Runtime: GPU 
 
 
-# ─── CELL 1: Install & verify GPU ────────────────────────────────────────────
-
-"""
-!pip install -q ultralytics
-"""
 
 import torch
 from ultralytics import YOLO
@@ -19,7 +12,7 @@ if torch.cuda.is_available():
     print(f"GPU     : {torch.cuda.get_device_name(0)}")
 
 
-# ─── CELL 2: Download Penn-Fudan dataset ─────────────────────────────────────
+#  Download Penn-Fudan dataset
 
 """
 !wget -q --show-progress https://www.cis.upenn.edu/~jshi/ped_html/PennFudanPed.zip -O PennFudanPed.zip
@@ -32,7 +25,7 @@ print(f"Images: {len(imgs)},  Masks: {len(masks)}")
 """
 
 
-# ─── CELL 3: Convert Penn-Fudan masks → YOLO bbox format ─────────────────────
+# Convert Penn-Fudan masks to YOLO bbox format 
 # Penn-Fudan has segmentation masks, not XML annotations.
 # We derive tight bounding boxes from each mask instance and write YOLO .txt files.
 
@@ -147,7 +140,7 @@ def prepare_pennfudan_yolo():
 prepare_pennfudan_yolo()
 
 
-# ─── CELL 4: Verify a few converted labels (sanity check) ────────────────────
+#  Verify a few converted labels 
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -179,7 +172,7 @@ for fname in train_imgs:
     show_yolo_label(img_path, lbl_path)
 
 
-# ─── CELL 5: Train YOLOv8n ────────────────────────────────────────────────────
+#Train YOLOv8n
 
 import os, time, json, glob
 from ultralytics import YOLO
@@ -207,7 +200,7 @@ train_results = model.train(
 elapsed = time.time() - t_start
 print(f"\nTraining complete in {elapsed/60:.1f} min")
 
-# ── Auto-detect actual weights path ──────────────────────────────────────────
+# Auto-detect actual weights path 
 def find_best_weights(project="runs/pennfudan"):
     # Method 1: read from result object (most reliable)
     try:
@@ -230,7 +223,7 @@ with open(os.path.join(run_dir, "training_time.json"), "w") as f:
     json.dump({"training_time_sec": round(elapsed, 1)}, f)
 
 
-# ─── CELL 6: Evaluate ────────────────────────────────────────────────────────
+# Evaluate
 
 import os, json, time, glob, numpy as np
 from ultralytics import YOLO
@@ -281,7 +274,7 @@ with open(os.path.join(run_dir, "eval_results.json"), "w") as f:
 print(f"\nSaved: {run_dir}/eval_results.json")
 
 
-# ─── CELL 7: Visualise predictions ───────────────────────────────────────────
+#  Visualise predictions 
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -342,13 +335,3 @@ for fname in test_imgs:
 
 print(f"Saved to {run_dir}/predictions/")
 
-
-# ─── CELL 8: Download outputs ─────────────────────────────────────────────────
-
-"""
-import shutil
-from google.colab import files
-
-shutil.make_archive("yolo_pennfudan_output", "zip", run_dir)
-files.download("yolo_pennfudan_output.zip")
-"""
