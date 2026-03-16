@@ -1,11 +1,7 @@
-# =============================================================================
+
 # NOTEBOOK 4 — Faster R-CNN (MobileNetV3) on Oxford-IIIT Pet Dataset (10 breeds)
-# Copy each section into a separate Colab cell and run top to bottom.
-# Runtime: GPU (Runtime > Change runtime type > T4 GPU)
-# =============================================================================
+# Runtime: GPU 
 
-
-# ─── CELL 1: Install & verify GPU ────────────────────────────────────────────
 
 """
 !pip install -q torch torchvision --upgrade
@@ -20,7 +16,7 @@ if torch.cuda.is_available():
     print(f"GPU         : {torch.cuda.get_device_name(0)}")
 
 
-# ─── CELL 2: Download Oxford-IIIT Pet Dataset ─────────────────────────────────
+# Download Oxford-IIIT Pet Dataset 
 
 """
 import os
@@ -40,7 +36,7 @@ print(f"XMLs   : {len(os.listdir('oxford-iiit-pet/annotations/xmls'))}")
 """
 
 
-# ─── CELL 3: Oxford Pet Dataset class ────────────────────────────────────────
+# Oxford Pet Dataset class
 # Reads images + Pascal VOC XML annotations.
 # Returns torchvision-compatible targets: boxes, labels, image_id, area, iscrowd.
 
@@ -54,7 +50,7 @@ from pathlib import Path
 import torchvision.transforms.functional as TF
 from torch.utils.data import Dataset, DataLoader, random_split
 
-# ── Config ───────────────────────────────────────────────────────────────────
+# Config
 DATA_ROOT     = "oxford-iiit-pet"
 IMG_SIZE      = 512
 MAX_PER_BREED = 50
@@ -65,7 +61,7 @@ BREEDS = [
 ]
 BREED2IDX = {b: i + 1 for i, b in enumerate(BREEDS)}  # 1-indexed (0 = background)
 NUM_CLASSES = len(BREEDS) + 1                           # +1 for background
-# ─────────────────────────────────────────────────────────────────────────────
+
 
 
 def parse_voc_xml(xml_path, orig_w, orig_h, class_id):
@@ -140,7 +136,7 @@ def collate_fn(batch):
     return tuple(zip(*batch))
 
 
-# ── Build sample list ─────────────────────────────────────────────────────────
+# Build sample list
 def build_sample_list(data_root, breeds, breed2idx, max_per_breed):
     img_dir = os.path.join(data_root, "images")
     ann_dir = os.path.join(data_root, "annotations", "xmls")
@@ -167,7 +163,7 @@ def build_sample_list(data_root, breeds, breed2idx, max_per_breed):
 
 all_samples = build_sample_list(DATA_ROOT, BREEDS, BREED2IDX, MAX_PER_BREED)
 
-# ── Split ─────────────────────────────────────────────────────────────────────
+# Split 
 n       = len(all_samples)
 n_train = int(0.70 * n)
 n_val   = int(0.15 * n)
@@ -195,7 +191,7 @@ print(f"Boxes       : {tgt['boxes']}")
 print(f"Label       : {tgt['labels']}  ({BREEDS[tgt['labels'][0].item()-1]})")
 
 
-# ─── CELL 4: Build Faster R-CNN model ────────────────────────────────────────
+# Build Faster R-CNN model
 
 import warnings
 from torchvision.models.detection import fasterrcnn_mobilenet_v3_large_fpn
@@ -224,7 +220,7 @@ print(f"Classes              : {NUM_CLASSES} (background + {len(BREEDS)} breeds)
 print(f"Trainable parameters : {n_params:,}")
 
 
-# ─── CELL 5: Optimizer, scheduler, AMP ───────────────────────────────────────
+# Optimizer, scheduler, AMP 
 
 import time
 
@@ -248,7 +244,7 @@ scaler  = torch.cuda.amp.GradScaler(enabled=use_amp)
 print(f"Mixed precision : {use_amp}")
 
 
-# ─── CELL 6: Training helpers ─────────────────────────────────────────────────
+# Training helpers
 
 def train_one_epoch(model, optimizer, loader, device, scaler, use_amp):
     model.train()
@@ -280,7 +276,7 @@ def compute_val_loss(model, loader, device, use_amp):
     return total / max(len(loader), 1)
 
 
-# ─── CELL 7: Training loop ────────────────────────────────────────────────────
+# Training loop 
 
 import json, os
 
@@ -321,7 +317,7 @@ with open("output_pet_frcnn/train_history.json", "w") as f:
     json.dump(history, f, indent=2)
 
 
-# ─── CELL 8: Plot loss curves ─────────────────────────────────────────────────
+#  Plot loss curves 
 
 import matplotlib.pyplot as plt
 
@@ -336,7 +332,7 @@ plt.show()
 print("Saved: output_pet_frcnn/loss_curve.png")
 
 
-# ─── CELL 9: Evaluate — mAP@0.5, Precision, Recall, FPS ──────────────────────
+#  Evaluate — mAP@0.5, Precision, Recall, FPS 
 
 from torchvision.ops import box_iou
 
@@ -444,7 +440,7 @@ with open("output_pet_frcnn/eval_results.json", "w") as f:
 print("\nSaved: output_pet_frcnn/eval_results.json")
 
 
-# ─── CELL 10: Visualise predictions ──────────────────────────────────────────
+#  Visualise predictions 
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -500,13 +496,3 @@ def show_predictions(model, dataset, device, n=6, score_thresh=0.5,
 show_predictions(model, test_set, device, n=6)
 print("Saved to output_pet_frcnn/predictions/")
 
-
-# ─── CELL 11: Download outputs ────────────────────────────────────────────────
-
-"""
-import shutil
-from google.colab import files
-
-shutil.make_archive("frcnn_pet_output", "zip", "output_pet_frcnn")
-files.download("frcnn_pet_output.zip")
-"""
