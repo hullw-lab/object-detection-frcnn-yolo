@@ -1,12 +1,5 @@
-# =============================================================================
 # NOTEBOOK 1 — Faster R-CNN on Penn-Fudan Pedestrian Dataset
-# Copy each section into a separate Colab cell and run top to bottom.
-# Runtime: GPU (Runtime > Change runtime type > T4 GPU)
-# =============================================================================
-
-
-# ─── CELL 1: Install & verify GPU ────────────────────────────────────────────
-# (paste into Colab cell, then run)
+# Runtime: GPU 
 
 """
 !pip install -q torch torchvision --upgrade
@@ -19,7 +12,7 @@ if torch.cuda.is_available():
     print(f"GPU     : {torch.cuda.get_device_name(0)}")
 
 
-# ─── CELL 2: Download & extract Penn-Fudan dataset ───────────────────────────
+#  Download & extract Penn-Fudan dataset 
 
 """
 import os
@@ -39,7 +32,7 @@ print(f"Images: {len(imgs)},  Masks: {len(masks)}")
 """
 
 
-# ─── CELL 3: Dataset class ────────────────────────────────────────────────────
+#  Dataset class 
 
 import os
 import numpy as np
@@ -118,7 +111,7 @@ print(f"Image shape  : {img.shape}")
 print(f"Boxes        : {target['boxes']}")
 
 
-# ─── CELL 4: Split dataset ────────────────────────────────────────────────────
+#  Split dataset 
 
 torch.manual_seed(42)
 n       = len(dataset)
@@ -136,7 +129,7 @@ test_loader  = DataLoader(test_set,  batch_size=1, shuffle=False, collate_fn=col
 print(f"Train: {n_train}  |  Val: {n_val}  |  Test: {n_test}")
 
 
-# ─── CELL 5: Build model ──────────────────────────────────────────────────────
+#  Build model 
 
 import warnings
 import torchvision
@@ -166,7 +159,7 @@ n_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 print(f"Trainable parameters: {n_params:,}")
 
 
-# ─── CELL 6: Optimizer & scheduler ───────────────────────────────────────────
+# Optimizer & scheduler
 
 EPOCHS      = 12
 LR          = 0.005
@@ -191,7 +184,7 @@ scaler  = torch.cuda.amp.GradScaler(enabled=use_amp)
 print(f"Mixed precision: {use_amp}")
 
 
-# ─── CELL 7: Training helpers ─────────────────────────────────────────────────
+# Training helpers 
 
 import time
 
@@ -228,7 +221,7 @@ def compute_val_loss(model, loader, device, use_amp):
     return total / max(len(loader), 1)
 
 
-# ─── CELL 8: Training loop ────────────────────────────────────────────────────
+# Training loop 
 
 import json, os
 
@@ -272,7 +265,7 @@ with open("output/train_history.json", "w") as f:
 torch.save({"test_indices": list(test_set.indices)}, "output/test_split.pth")
 
 
-# ─── CELL 9: Plot training curves ─────────────────────────────────────────────
+# Plot training curves 
 
 import matplotlib.pyplot as plt
 
@@ -287,7 +280,7 @@ plt.show()
 print("Saved: output/loss_curve.png")
 
 
-# ─── CELL 10: Evaluation — mAP@0.5, Precision, Recall, FPS ──────────────────
+# Evaluation — mAP@0.5, Precision, Recall, FPS 
 
 from torchvision.ops import box_iou
 
@@ -372,7 +365,7 @@ with open("output/eval_results.json", "w") as f:
 print("\nSaved: output/eval_results.json")
 
 
-# ─── CELL 11: Visualise predictions ──────────────────────────────────────────
+# Visualise predictions
 
 import matplotlib.patches as patches
 
@@ -416,16 +409,3 @@ def show_predictions(model, dataset, device, n=6, score_thresh=0.5, save_dir="ou
 
 show_predictions(model, test_set, device, n=6)
 print("Prediction images saved to output/predictions/")
-
-
-# ─── CELL 12: Download all outputs from Colab ─────────────────────────────────
-
-"""
-# Run this cell to zip and download your outputs
-
-import shutil
-shutil.make_archive("assignment2_output", "zip", "output")
-
-from google.colab import files
-files.download("assignment2_output.zip")
-"""
