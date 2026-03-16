@@ -1,12 +1,9 @@
-# =============================================================================
+
 # NOTEBOOK 2 — YOLOv8n on Oxford-IIIT Pet Dataset (10-breed subset)
-# Copy each section into a separate Colab cell and run top to bottom.
-# Runtime: GPU (Runtime > Change runtime type > T4 GPU)
-# =============================================================================
+# Runtime: GPU 
 
 
-# ─── CELL 1: Install dependencies ────────────────────────────────────────────
-
+# Install dependencies
 """
 !pip install -q ultralytics
 """
@@ -19,7 +16,7 @@ if torch.cuda.is_available():
     print(f"GPU        : {torch.cuda.get_device_name(0)}")
 
 
-# ─── CELL 2: Download Oxford-IIIT Pet Dataset ─────────────────────────────────
+#Download Oxford-IIIT Pet Dataset
 
 """
 import os
@@ -44,7 +41,7 @@ print(f"Images: {len(imgs)},  XMLs: {len(xmls)}")
 """
 
 
-# ─── CELL 3: Prepare 10-breed YOLO-format subset ─────────────────────────────
+#  Prepare 10-breed YOLO-format subset
 
 import os
 import json
@@ -54,7 +51,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from PIL import Image
 
-# ── Config ──────────────────────────────────────────────────────
+#  Config 
 DATA_ROOT     = "oxford-iiit-pet"
 OUT_DIR       = "pet_yolo"
 IMG_SIZE      = 512
@@ -65,7 +62,7 @@ BREEDS = [
     "Egyptian_Mau", "Maine_Coon", "Persian", "Ragdoll", "Siamese",
 ]
 BREED2IDX = {b: i for i, b in enumerate(BREEDS)}
-# ────────────────────────────────────────────────────────────────
+
 
 def convert_voc_to_yolo(xml_path, orig_w, orig_h, class_id):
     """Convert a Pascal VOC XML bbox to YOLO format lines."""
@@ -168,7 +165,7 @@ def prepare_pet_dataset():
 prepare_pet_dataset()
 
 
-# ─── CELL 4: Train YOLOv8n ────────────────────────────────────────────────────
+# Train YOLOv8n 
 
 import os, time, json, glob
 from ultralytics import YOLO
@@ -196,10 +193,6 @@ train_results = model.train(
 elapsed = time.time() - t_start
 print(f"\nTraining complete in {elapsed/60:.1f} min")
 
-# ── Auto-detect the actual weights path ──────────────────────────────────────
-# Ultralytics may create runs/pet/yolov8n, runs/pet/yolov8n2, etc.
-# The safest way is to read the save_dir directly from the results object,
-# or fall back to searching for the most recently modified best.pt.
 
 def find_best_weights():
     # Method 1: read from train results object (Ultralytics >= 8.0.20)
@@ -228,17 +221,13 @@ with open(os.path.join(run_dir, "training_time.json"), "w") as f:
     json.dump({"training_time_sec": round(elapsed, 1)}, f)
 
 
-# ─── CELL 5: Evaluate YOLOv8n ─────────────────────────────────────────────────
+#  Evaluate YOLOv8n 
 
 import os, json, time, glob
 from ultralytics import YOLO
 
 DATA_YAML = os.path.join(os.path.abspath(OUT_DIR), "data.yaml")
 
-# WEIGHTS is set automatically by Cell 4.
-# If you are re-running this cell in a new session, set it manually:
-#   WEIGHTS = "runs/pet/yolov8n/weights/best.pt"   ← adjust folder name if needed
-# Or let this block find it automatically:
 if "WEIGHTS" not in dir() or not os.path.exists(WEIGHTS):
     candidates = glob.glob("runs/pet/**/weights/best.pt", recursive=True)
     if not candidates:
@@ -289,7 +278,7 @@ with open(os.path.join(run_dir, "eval_results.json"), "w") as f:
 print(f"\nSaved: {run_dir}/eval_results.json")
 
 
-# ─── CELL 6: Visualise YOLOv8n predictions ───────────────────────────────────
+# Visualise YOLOv8n predictions 
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -358,7 +347,7 @@ for fname in test_imgs:
 print("Done. Prediction images saved to runs/pet/yolov8n/predictions/")
 
 
-# ─── CELL 7: Print final comparison table ─────────────────────────────────────
+# Print final comparison table 
 
 """
 NOTE: Run this cell after completing BOTH notebooks.
@@ -408,13 +397,3 @@ for r in rows:
     print(row_str(r))
 print(div)
 
-
-# ─── CELL 8: Download outputs from Colab ──────────────────────────────────────
-
-"""
-import shutil
-from google.colab import files
-
-shutil.make_archive("assignment2_yolo_output", "zip", "runs/pet/yolov8n")
-files.download("assignment2_yolo_output.zip")
-"""
